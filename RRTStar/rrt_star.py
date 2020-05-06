@@ -177,10 +177,46 @@ class RRTStar(RRT):
                 node.cost = self.calc_new_cost(parent_node, node)
                 self.propagate_cost_to_leaves(node)
 
+    def generate_obstacle_trjectory(self):
+
+        x = np.linspace(0, 10, num=100)
+        y = np.abs(np.sin(x**2/9.0)) + 6
+
+        indexes = []
+        count = 0
+        for (x_coord, y_coord) in zip(x, y):
+            if self.check_collision_obstacle(x_coord, y_coord):
+                indexes.append(count)
+            count += 1
+
+        x_final = x[indexes]
+        y_final = y[indexes]
+        func_trjectory = interp1d(x_final, y_final, kind='cubic')
+
+        return func_trjectory(x_final)
+
+    def check_collision_obstacle(self, x_coord, y_coord):
+
+        for (ox, oy, size) in self.obstacle_list_circle:
+            dx_list = [ox - x_coord]
+            dy_list = [oy - y_coord]
+            d_list = [dx * dx + dy * dy for (dx, dy) in zip(dx_list, dy_list)]
+
+            if min(d_list) <= (size + 0.5) ** 2:
+                return False  # collision
+
+        for (lx, ly, rx, ry) in self.obstacle_list_square:
+
+                if (x_coord > (lx - 0.5)) and (x_coord < (rx + 0.5)) and \
+                (y_coord < (ry + 0.5)) and (y_coord > (ly - 0.5)):
+                    return False
+
+        return True
+
     def get_obstacle_location(self):
         #TODO
         # points of spline.
-        path = []
+        path = self.generate_obstacle_trajectory()
         
         global obs_x
         global obs_y
