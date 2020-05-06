@@ -2,6 +2,10 @@ import math
 import os
 import sys
 import numpy as np
+import time
+import threading
+import concurrent.futures
+from collections import deque
 
 import matplotlib.pyplot as plt
 
@@ -14,6 +18,9 @@ except ImportError:
     raise
 
 show_animation = True
+
+obs_x = 0
+obs_y = 0
 
 
 class RRTStar(RRT):
@@ -32,7 +39,8 @@ class RRTStar(RRT):
                  goal_sample_rate=20,
                  max_iter=500,
                  connect_circle_dist=50.0,
-                 clearance=0):
+                 clearance=0,
+                 detection_range=2.0):
         super().__init__(start, goal, obstacle_list_circle, obstacle_list_square,
                          rand_area, expand_dis, path_resolution, goal_sample_rate, max_iter, clearance)
         """
@@ -169,6 +177,68 @@ class RRTStar(RRT):
                 node.cost = self.calc_new_cost(parent_node, node)
                 self.propagate_cost_to_leaves(node)
 
+    def get_obstacle_location(self):
+        #TODO
+        # points of spline.
+        path = []
+        
+        global obs_x
+        global obs_y
+        for pts in path:
+            obs_x = pts[0]
+            obs_y = pts[1]
+            time.sleep(1)
+        # return self.Node(0, 0)
+    
+    def check_obstacle_in_range(self, current_node, obstacle_node):
+        d, _ = self.calc_distance_and_angle(current_node, obstacle_node)
+        if d < self.detection_range:
+            new_node = self.steer(current_node, obstacle_node)
+            is_path_blocked = self.check_collision(new_node, self.obstacle_list_circle, self.obstacle_list_square, self.clearance)
+            if not is_path_blocked:
+                return True
+        return False
+    
+    def check_trajectory_collision(self, obstacle_path, robot_path):
+        for node in robot_path:
+            for obs in obstacle_path:
+                if node[0] == obs[0] and node[1] == obs[1]:
+                    return True
+        return False
+        
+    def replan_if_path_blocked(self, path, obstacle_node):
+        time.sleep(1)
+        new_obstacle_node = self.Node(obs_x, obs_y)
+        #TODO
+        #Create line equation from 2 points moving in direction calculated
+        obs_path = self.get_line_points(obstacle_node, new_obstacle_node)
+        
+        if self.check_trajectory_collision(obs_path, path):
+            #TODO
+            #Replan algorithm
+            path = self.replan()
+        
+        return path
+    
+    def need_for_replan(self, path):
+        final_path = []
+        nodes_to_visit = deque(path)
+        while len(nodes_to_visit) != 0:
+            obstacle_node = self.Node(obs_x, obs_y)
+            robot = nodes_to_visit.pop()
+            final_path.append(robot)
+            current_node = self.Node(robot[0], robot[1])
+            if self.check_obstacle_in_range(current_node, obstacle_node):
+                new_path = self.replan_if_path_blocked(nodes_to_visit, obstacle_node)
+                nodes_to_visit = deque(new_path)
+                
+        for step in final_path:
+            f = open("nodeReplannedPath.txt", "a+")
+            # toWrite = str([self.path_resolution * math.cos(theta), self.path_resolution * math.sin(theta)
+            #                   , theta])
+            toWrite = str([step[0], step[1], step[2]])
+            f.write(toWrite[1:len(toWrite) - 1] + '\n')
+            f.close()
 
 def main():
     print("Start " + __file__)
@@ -212,7 +282,18 @@ def main():
                        obstacle_list_square=obstacleList_square,
                        clearance=clearance+radius)
     open('nodePath.txt', 'w').close()
+    open('nodeReplannedPath.txt', 'w').close()
+    # with concurrent.futures.ThreadPoolExecutor() as executor:
+    #     t1 = executor.submit(rrt_star.planning, show_animation)
+    #     path = t1.result()
     path = rrt_star.planning(animation=show_animation)
+    
+    t2 = threading.Thread(target=rrt_star.get_obstacle_location)
+    t2.start()
+    
+    t3 = threading.Thread(target=rrt_star.need_for_replan, args=(path,))
+    t3.start()
+    
 
     if path is None:
         print("Cannot find path")
