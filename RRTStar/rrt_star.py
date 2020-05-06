@@ -30,7 +30,7 @@ class RRTStar(RRT):
                  expand_dis=30.0,
                  path_resolution=1.0,
                  goal_sample_rate=20,
-                 max_iter=100,
+                 max_iter=500,
                  connect_circle_dist=50.0,
                  clearance=0):
         super().__init__(start, goal, obstacle_list_circle, obstacle_list_square,
