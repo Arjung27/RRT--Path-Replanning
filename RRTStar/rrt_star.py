@@ -273,14 +273,17 @@ class RRTStar(RRT):
     def need_for_replan(self, path):
         final_path = []
         nodes_to_visit = deque(path)
+        prev_node = None
         while len(nodes_to_visit) != 0:
             obstacle_node = self.Node(obs_x, obs_y)
             robot = nodes_to_visit.pop()
             final_path.append(robot)
             current_node = self.Node(robot[0], robot[1])
+            current_node.parent = prev_node
             if self.check_obstacle_in_range(current_node, obstacle_node):
                 new_path = self.replan_if_path_blocked(current_node, obstacle_node, nodes_to_visit)
                 nodes_to_visit = deque(new_path)
+            prev_node = current_node
                 
         for step in final_path:
             f = open("nodeReplannedPath.txt", "a+")
