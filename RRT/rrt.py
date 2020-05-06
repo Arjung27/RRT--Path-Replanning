@@ -24,6 +24,8 @@ class RRT:
             self.path_x = []
             self.path_y = []
             self.parent = None
+            self.theta = None
+            self.path_theta = []
 
     def __init__(self, start, goal, obstacle_list_circle, obstacle_list_square, rand_area,
                  expand_dis=3.0, path_resolution=0.5, goal_sample_rate=5, max_iter=500, clearance=0):
@@ -84,9 +86,12 @@ class RRT:
 
         new_node = self.Node(from_node.x, from_node.y)
         d, theta = self.calc_distance_and_angle(new_node, to_node)
+        
+        new_node.theta = theta
 
         new_node.path_x = [new_node.x]
         new_node.path_y = [new_node.y]
+        new_node.path_theta = [new_node.theta]
 
         if extend_length > d:
             extend_length = d
@@ -98,23 +103,86 @@ class RRT:
             new_node.y += self.path_resolution * math.sin(theta)
             new_node.path_x.append(new_node.x)
             new_node.path_y.append(new_node.y)
+            new_node.path_theta.append(theta)
 
         d, _ = self.calc_distance_and_angle(new_node, to_node)
         if d <= self.path_resolution:
             new_node.path_x.append(to_node.x)
             new_node.path_y.append(to_node.y)
+            new_node.path_theta.append(theta)
 
         new_node.parent = from_node
 
         return new_node
 
     def generate_final_course(self, goal_ind):
-        path = [[self.end.x, self.end.y]]
+        # f = open("nodePath.txt", "r+")
+        path = [[self.end.x, self.end.y, self.end.theta]]
         node = self.node_list[goal_ind]
+        n_expand = math.floor(self.expand_dis / self.path_resolution)
+        dx = self.end.x - node.x
+        dy = self.end.y - node.y
+        d = math.hypot(dx, dy)
+        theta = math.atan2(dy, dx)
+        distance = (dx ** 2 + dy ** 2) ** 0.5
+        breaks = math.floor(distance / 0.04)
+        break_x = np.linspace(self.end.x, node.x, breaks)
+        break_y = np.linspace(self.end.y, node.y, breaks)
+        for i in range(breaks):
+            f = open("nodePath.txt", "r+")
+            content = f.read()
+            f.seek(0, 0)
+            # toWrite = str([self.path_resolution * math.cos(theta), self.path_resolution * math.sin(theta)
+            #                   , theta])
+            toWrite = str([break_x[i], break_y[i], theta])
+            f.write(toWrite[1:len(toWrite) - 1] + '\n' + content)
+            f.close()
         while node.parent is not None:
-            path.append([node.x, node.y])
+            dx = node.x - node.parent.x
+            dy = node.y - node.parent.y
+            d = math.hypot(dx, dy)
+            theta = math.atan2(dy, dx)
+            distance = (dx ** 2 + dy ** 2)**0.5
+            breaks = math.floor(distance/0.04)
+            break_x = np.linspace(node.x, node.parent.x, breaks)
+            break_y = np.linspace(node.y, node.parent.y, breaks)
+
+    
+            for i in range(breaks):
+                f = open("nodePath.txt", "r+")
+                content = f.read()
+                f.seek(0, 0)
+                # toWrite = str([self.path_resolution * math.cos(theta), self.path_resolution * math.sin(theta)
+                #                   , theta])
+                toWrite = str([break_x[i], break_y[i], theta])
+                f.write(toWrite[1:len(toWrite) - 1] + '\n' + content)
+                f.close()
+            path.append([node.x, node.y, node.theta])
             node = node.parent
-        path.append([node.x, node.y])
+        path.append([node.x, node.y, node.theta])
+
+
+        
+
+        # for i in range(len(node.path_x) - 2):
+        #     dx = node.path_x[i + 1] - node.path_x[i]
+        #     dy = node.path_y[i + 1] - node.path_y[i]
+        #     dtheta = node.path_theta[i]
+        #     toWrite = str([dx, dy, dtheta])
+        #     # node = node.parent
+        #     f = open("nodePath.txt", "r+")
+        #     content = f.read()
+        #     f.seek(0, 0)
+        #     f.write(toWrite[1:len(toWrite) - 1] + '\n' + content)
+        #     f.close()
+        # f = open("nodePath.txt", "r+")
+        # content = f.read()
+        # f.seek(0, 0)
+        # toWrite = str([node.x, node.y, node.theta])
+        # # node = node.parent
+        # f.write(toWrite[1:len(toWrite) - 1] + '\n' + content)
+        # f.close()
+        
 
         return path
 

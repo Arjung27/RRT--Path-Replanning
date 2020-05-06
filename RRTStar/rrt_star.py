@@ -1,6 +1,7 @@
 import math
 import os
 import sys
+import numpy as np
 
 import matplotlib.pyplot as plt
 
@@ -29,7 +30,7 @@ class RRTStar(RRT):
                  expand_dis=30.0,
                  path_resolution=1.0,
                  goal_sample_rate=20,
-                 max_iter=300,
+                 max_iter=100,
                  connect_circle_dist=50.0,
                  clearance=0):
         super().__init__(start, goal, obstacle_list_circle, obstacle_list_square,
@@ -53,7 +54,8 @@ class RRTStar(RRT):
         animation: flag for animation on or off
         search_until_max_iter: search until max iteration for path improving or not
         """
-
+        self.start.theta = 0
+        self.start.path_theta = [self.start.theta]
         self.node_list = [self.start]
         for i in range(self.max_iter):
             print("Iter:", i, ", number of nodes:", len(self.node_list))
@@ -170,7 +172,7 @@ class RRTStar(RRT):
 
 def main():
     print("Start " + __file__)
-    clearance = 0.5
+    clearance = 0.1
     radius = 0.0
 
     # ====Search Path with RRT====
@@ -209,17 +211,35 @@ def main():
                        obstacle_list_circle=obstacleList_circle,
                        obstacle_list_square=obstacleList_square,
                        clearance=clearance+radius)
+    open('nodePath.txt', 'w').close()
     path = rrt_star.planning(animation=show_animation)
 
     if path is None:
         print("Cannot find path")
     else:
         print("found path!!")
-
+        f = open('nodePath.txt', 'r')
+        lines = f.readlines()
+        x_int = 0
+        y_int = 0
+        pts = []
+        pts.append([x_int, y_int])
+        print(path)
         # Draw final path
         if show_animation:
             rrt_star.draw_graph()
-            plt.plot([x for (x, y) in path], [y for (x, y) in path], '-r')
+            plt.plot([x for (x, y, theta) in path], [y for (x, y, theta) in path], '-b')
+            for line in lines:
+                points = line.rstrip().split(',')
+                print(points)
+                
+                # plt.plot(float(points[0]), float(points[1]), '-r')
+                # print(points)
+                # x_int += float(points[0])
+                # y_int += float(points[1])
+                pts.append([float(points[0]), float(points[1])])
+            
+            plt.plot(np.asarray(pts)[:,0], np.asarray(pts)[:,1], '-r')
             plt.grid(True)
             plt.pause(0.01)  # Need for Mac
             plt.show()
