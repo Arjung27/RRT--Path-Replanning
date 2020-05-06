@@ -178,7 +178,7 @@ class RRTStar(RRT):
                 node.cost = self.calc_new_cost(parent_node, node)
                 self.propagate_cost_to_leaves(node)
 
-    def generate_obstacle_trjectory(self):
+    def generate_obstacle_trajectory(self):
 
         x = np.linspace(0, 10, num=100)
         y = np.abs(np.sin(x**2/9.0)) + 6
@@ -192,9 +192,9 @@ class RRTStar(RRT):
 
         x_final = x[indexes]
         y_final = y[indexes]
-        func_trjectory = interp1d(x_final, y_final, kind='cubic')
+        func_trajectory = interp1d(x_final, y_final, kind='cubic')
 
-        return func_trjectory(x_final)
+        return func_trajectory(x_final)
 
     def check_collision_obstacle(self, x_coord, y_coord):
 
@@ -236,21 +236,34 @@ class RRTStar(RRT):
                 return True
         return False
     
-    def check_trajectory_collision(self, obstacle_path, robot_path):
-        for node in robot_path:
-            for obs in obstacle_path:
-                if node[0] == obs[0] and node[1] == obs[1]:
-                    return True
-        return False
+    def normalize_angle(self, angle):
+        newAngle = angle
+        while newAngle <= -180:
+            newAngle += 360
+        while newAngle > 180:
+            newAngle -= 360
+        return newAngle
+    
+    def check_trajectory_collision(self, current_node, obstacle_node, old_obstacle_node):
+        threshold_angle = 15
+        angle_direction = math.atan2((obstacle_node.y - current_node.y), (obstacle_node.x - current_node.x))
+        angle_obs = math.atan2((obstacle_node.y - old_obstacle_node.y), (obstacle_node.x - old_obstacle_node.x))
+        angle_robot = math.atan2((current_node.y - current_node.parent.y), (current_node.x - current_node.parent.x))
+        if abs(self.normalize_angle(angle_direction - angle_robot)) < threshold_angle:
+            angle_v_diff = abs(self.normalize_angle(angle_robot - angle_obs))
+            if angle_v_diff < threshold_angle:
+                return False
+            elif angle_v_diff > 180 - threshold_angle:
+                return True
+            else:
+                return False
         
-    def replan_if_path_blocked(self, path, obstacle_node):
+        
+    def replan_if_path_blocked(self, current_node, obstacle_node, path):
         time.sleep(1)
         new_obstacle_node = self.Node(obs_x, obs_y)
-        #TODO
-        #Create line equation from 2 points moving in direction calculated
-        obs_path = self.get_line_points(obstacle_node, new_obstacle_node)
         
-        if self.check_trajectory_collision(obs_path, path):
+        if self.check_trajectory_collision(current_node, new_obstacle_node, obstacle_node):
             #TODO
             #Replan algorithm
             path = self.replan()
@@ -266,7 +279,7 @@ class RRTStar(RRT):
             final_path.append(robot)
             current_node = self.Node(robot[0], robot[1])
             if self.check_obstacle_in_range(current_node, obstacle_node):
-                new_path = self.replan_if_path_blocked(nodes_to_visit, obstacle_node)
+                new_path = self.replan_if_path_blocked(current_node, obstacle_node, nodes_to_visit)
                 nodes_to_visit = deque(new_path)
                 
         for step in final_path:
