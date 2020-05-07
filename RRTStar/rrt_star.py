@@ -262,7 +262,7 @@ class RRTStar(RRT):
         return newAngle
     
     def check_trajectory_collision(self, current_node, obstacle_node, old_obstacle_node):
-        threshold_angle = 181
+        threshold_angle = 140
         angle_direction = math.atan2((obstacle_node.y - current_node.y), (obstacle_node.x - current_node.x))
         print("Angle direction ", angle_direction)
         angle_obs = math.atan2((obstacle_node.y - old_obstacle_node.y), (obstacle_node.x - old_obstacle_node.x))
@@ -323,6 +323,7 @@ class RRTStar(RRT):
         all_nearby_nodes, inds = self.find_nodes_for_new_parent(current_node, sampling_distance)
         self.node_list = all_nearby_nodes
         self.make_current_node_parent(current_node, self.node_list)
+        current_node.parent = None
         self.node_list.append(current_node)
         for n1 in self.node_list:
             self.rewire(n1, [len(self.node_list) - 1])
@@ -375,14 +376,20 @@ class RRTStar(RRT):
         time.sleep(1)
         new_obstacle_node = self.Node(obs_x, obs_y)
         print("New obstacle location ", new_obstacle_node.x, new_obstacle_node.y)
-        
+        new_path = None
+        flag = True
         if self.check_trajectory_collision(current_node, new_obstacle_node, obstacle_node):
             #TODO
             #Replan algorithm
-            path = self.replan(path, new_obstacle_node, current_node)
+            new_path = self.replan(path, new_obstacle_node, current_node)
+            print(new_path)
+            flag = False
+            # print("Couldn't find new path, continuing with same path")
         
-        print(path)
-        return path
+        if new_path is None:
+            new_path = path
+            flag = True
+        return new_path, flag
     
     def need_for_replan(self, path):
         # time.sleep(39)
@@ -394,15 +401,16 @@ class RRTStar(RRT):
             obstacle_node = self.Node(obs_x, obs_y)
             robot = nodes_to_visit.popleft()
             final_path.append(robot)
-            current_node = self.Node(robot[0], robot[1])
+            current_node = self.Node(float(robot[0]), float(robot[1]))
             current_node.parent = prev_node
             print("Robot Path: " + str(current_node.x) + ', ' + str(current_node.y).format(threading.current_thread().name))
             if prev_node is not None:
                 print("Robot Parent: " + str(current_node.parent.x) + ', ' + str(current_node.parent.y).format(threading.current_thread().name))
             if self.check_obstacle_in_range(current_node, obstacle_node):
-                new_path = self.replan_if_path_blocked(current_node, obstacle_node, nodes_to_visit)
-                
-                print("NEW PATH")
+                new_path, flag = self.replan_if_path_blocked(current_node, obstacle_node, nodes_to_visit)
+                if not flag:
+                    print("NEW PATH")
+                    new_path = self.break_points_final(new_path)
                 nodes_to_visit = deque(new_path)
             prev_node = current_node
             time.sleep(1)
@@ -427,7 +435,14 @@ class RRTStar(RRT):
              break_x = np.linspace(points[i][0], points[i-1][0], breaks)
              break_y = np.linspace(points[i][1], points[i-1][1], breaks)
              for num in range(breaks):
-                 path.append([break_x[num], break_y[num], theta])
+                 path.append([float(break_x[num]), float(break_y[num]), float(theta)])
+         prev = None
+         for num, node in enumerate(path):
+             new_node = self.Node(node[0], node[1])
+             new_node.theta = node[2]
+             new_node.parent = prev
+             self.node_list.append(new_node)
+             prev = node
          return path
 
 
@@ -467,14 +482,14 @@ def main():
 
     # Set Initial parameters
     rrt_star = RRTStar(start=[1, 2],
-                       goal=[7, 5],
+                       goal=[6, 10],
                        rand_area=[0, 10],
                        obstacle_list_circle=obstacleList_circle,
                        obstacle_list_square=obstacleList_square,
                        clearance=clearance+radius)
     open('nodePath.txt', 'w').close()
     open('nodeReplannedPath.txt', 'w').close()
-    open('obstaclePath.txt', 'w').close()
+    # open('obstaclePath.txt', 'w').close()
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     t1 = executor.submit(rrt_star.planning, show_animation)
     #     path = t1.result()
@@ -526,19 +541,53 @@ def main():
             points = line.rstrip().split(',')
             # print(points)
             pts_obs.append([float(points[0]), float(points[1])])
-            
+        f2 = open('nodeReplannedPath.txt', 'r')
+        lines2 = f2.readlines()
+        # x_int = 0
+        # y_int = 0
+        node_path_replan = []
+        # pts.append([x_int, y_int])
+        for line in lines2:
+            points = line.rstrip().split(',')
+            # print(points)
+            node_path_replan.append([float(points[0]), float(points[1])])
+
         if show_animation:
             rrt_star.draw_graph()
-            plt.plot([x for (x, y, theta) in path], [y for (x, y, theta) in path], '-b')
+            plt.plot([x for (x, y, theta) in path], [y for (x, y, theta) in path], '-m')
+            # plt.plot([x for (x, y, theta) in path], [y for (x, y, theta) in path], '-b')
+            # plt.plot(np.asarray(pts_obs)[:, 0], np.asarray(pts_obs)[:, 1], '-r')
             # for line in lines:
             #     points = line.rstrip().split(',')
             #     print(points)
-                # pts.append([float(points[0]), float(points[1])])
-            
-            plt.plot(np.asarray(pts)[:,0], np.asarray(pts)[:,1], '-r')
-            plt.plot(np.asarray(pts_obs)[:,0], np.asarray(pts_obs)[:,1], '-y')
+            # pts.append([float(points[0]), float(points[1])])
+            # Need for Mac
+            count_robot = 0
+            for obs_cnt in range(30):
+                plt.plot([node_path_replan[obs_cnt][0], node_path_replan[obs_cnt + 1][0]],
+                         [node_path_replan[obs_cnt][1], node_path_replan[obs_cnt + 1][1]], '-y', linewidth=2)
+                plt.grid(True)
+                plt.pause(0.1)
+                count_robot += 1
+    
+            count_obstacle = 0
+            for cnt in range(count_robot, len(node_path_replan) - 2):
+                plt.plot([node_path_replan[count_robot][0], node_path_replan[count_robot + 1][0]],
+                         [node_path_replan[count_robot][1], node_path_replan[count_robot + 1][1]], '-y', linewidth=2)
+                plt.plot([pts_obs[count_obstacle][0], pts_obs[count_obstacle + 1][0]],
+                         [pts_obs[count_obstacle][1], pts_obs[count_obstacle + 1][1]], '-r')
+                plt.grid(True)
+                plt.pause(0.1)
+                count_robot += 1
+                count_obstacle += 1
+    
+            for obs_cnt in range(count_obstacle, len(pts_obs) - 2):
+                plt.plot([pts_obs[obs_cnt][0], pts_obs[obs_cnt + 1][0]],
+                         [pts_obs[obs_cnt][1], pts_obs[obs_cnt + 1][1]], '-r')
+                plt.grid(True)
+                plt.pause(0.1)
             plt.grid(True)
-            plt.pause(0.01)  # Need for Mac
+            plt.pause(0.01)
             plt.show()
 
 def scam():
