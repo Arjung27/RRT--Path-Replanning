@@ -287,7 +287,9 @@ class RRTStar(RRT):
     def find_nodes_for_new_parent(self, current_node, sampling_distance):
 
         nearby_nodes = []
+        print("Current node vals ", current_node.x, current_node.y)
         for i, n in enumerate(self.node_list):
+            print(n.x, n.y)
             if n.x == current_node.x and n.y == current_node.y:
                 inds = i
         # inds = self.node_list.index(current_node)
@@ -358,7 +360,7 @@ class RRTStar(RRT):
                 last_index = self.search_best_goal_node()
                 if last_index:
                     print("Path Found")
-                    return self.generate_final_course_with_replan(last_index)
+                    return [self.generate_final_course_with_replan(last_index), index - 1]
 
 
         print("reached max iteration")
@@ -367,7 +369,7 @@ class RRTStar(RRT):
         if last_index:
             # print("Last Index: ", last_index)
             print("Path Found")
-            return self.generate_final_course_with_replan(last_index)
+            return [self.generate_final_course_with_replan(last_index), index - 1]
 
 
     def replan_if_path_blocked(self, current_node, obstacle_node, path):
@@ -378,18 +380,22 @@ class RRTStar(RRT):
         print("New obstacle location ", new_obstacle_node.x, new_obstacle_node.y)
         new_path = None
         flag = True
+        index = None
         if self.check_trajectory_collision(current_node, new_obstacle_node, obstacle_node):
             #TODO
             #Replan algorithm
-            new_path = self.replan(path, new_obstacle_node, current_node)
-            print(new_path)
-            flag = False
+            res = self.replan(path, new_obstacle_node, current_node)
+            if res is not None:
+                print(res[0])
+                new_path = res[0]
+                index = res[1]
+                flag = False
             # print("Couldn't find new path, continuing with same path")
         
         if new_path is None:
             new_path = path
             flag = True
-        return new_path, flag
+        return new_path, index, flag
     
     def need_for_replan(self, path):
         # time.sleep(39)
@@ -407,11 +413,17 @@ class RRTStar(RRT):
             if prev_node is not None:
                 print("Robot Parent: " + str(current_node.parent.x) + ', ' + str(current_node.parent.y).format(threading.current_thread().name))
             if self.check_obstacle_in_range(current_node, obstacle_node):
-                new_path, flag = self.replan_if_path_blocked(current_node, obstacle_node, nodes_to_visit)
+                new_path, index, flag = self.replan_if_path_blocked(current_node, obstacle_node, nodes_to_visit)
                 if not flag:
                     print("NEW PATH")
+                    print("Old path ", nodes_to_visit)
+                    print("Index ", index)
                     new_path = self.break_points_final(new_path)
-                nodes_to_visit = deque(new_path)
+                    remaining = list(nodes_to_visit)[index+1:]
+                    nodes_to_visit = deque(new_path)
+                    for r in remaining:
+                        nodes_to_visit.append(r)
+                    print("New path ", nodes_to_visit)
             prev_node = current_node
             time.sleep(1)
 
