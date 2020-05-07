@@ -15,6 +15,10 @@ def get_going():
         f_list = [float(i) for line in file1 for i in line.split(',') if i.strip()]
 
     f_list = np.reshape(f_list, (len(f_list)/3,3))
+    ini=[f_list[0,0],f_list[0,1],0.0]
+    ini=np.reshape(ini,(1,3))
+    f_list = np.vstack((ini,f_list))
+
     
     th = f_list[:,2]
     pos = f_list[:,0:2]
@@ -45,7 +49,6 @@ def get_going():
 
     del_pos = np.reshape(del_pos,(len(del_pos),1))
     del_theta = np.reshape(del_theta,(len(del_theta),1))
-
     del_vals = np.hstack((del_pos,del_theta))
 
     t_stamp = 1.5 #sec
