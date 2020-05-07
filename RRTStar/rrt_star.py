@@ -39,7 +39,7 @@ class RRTStar(RRT):
                  path_resolution=1.0,
                  goal_sample_rate=5,
                  max_iter=1000,
-                 connect_circle_dist=10.0,
+                 connect_circle_dist=15.0,
                  clearance=0,
                  detection_range=2.0):
         super().__init__(start, goal, obstacle_list_circle, obstacle_list_square,
@@ -307,7 +307,7 @@ class RRTStar(RRT):
     def replan(self, remaining_path, new_obstacle_node, current_node):
         remaining_path = list(remaining_path)
         search_until_max_iter = True
-        animation = True
+        animation = False
         index = self.get_nearest_node_index_replan(remaining_path, new_obstacle_node)
         intrmediate_goal = remaining_path[index - 1]
         sampling_distance = ((current_node.x - intrmediate_goal[0])**2 + (current_node.y - intrmediate_goal[1])**2)**0.5
@@ -349,7 +349,7 @@ class RRTStar(RRT):
                 last_index = self.search_best_goal_node()
                 if last_index:
                     print("Path Found")
-                    return self.generate_final_course(last_index)
+                    return self.generate_final_course_with_replan(last_index)
 
 
         print("reached max iteration")
@@ -358,7 +358,7 @@ class RRTStar(RRT):
         if last_index:
             # print("Last Index: ", last_index)
             print("Path Found")
-            return self.generate_final_course(last_index)
+            return self.generate_final_course_with_replan(last_index)
 
 
     def replan_if_path_blocked(self, current_node, obstacle_node, path):
