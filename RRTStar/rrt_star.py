@@ -373,7 +373,7 @@ class RRTStar(RRT):
             #Replan algorithm
             path = self.replan(path, new_obstacle_node, current_node)
         
-        # print(path)
+        print(path)
         return path
     
     def need_for_replan(self, path):
@@ -392,6 +392,8 @@ class RRTStar(RRT):
                 print("Robot Parent: " + str(current_node.parent.x) + ', ' + str(current_node.parent.y).format(threading.current_thread().name))
             if self.check_obstacle_in_range(current_node, obstacle_node):
                 new_path = self.replan_if_path_blocked(current_node, obstacle_node, nodes_to_visit)
+                
+                print("NEW PATH")
                 nodes_to_visit = deque(new_path)
             prev_node = current_node
             time.sleep(1)

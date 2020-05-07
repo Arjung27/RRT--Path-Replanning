@@ -119,6 +119,16 @@ class RRT:
 
         return new_node
 
+    def generate_final_course_with_replan(self, goal_ind):
+        # f = open("nodePath.txt", "r+")
+        path = [[self.end.x, self.end.y, self.end.theta]]
+        node = self.node_list[goal_ind]
+        while node.parent is not None:
+            path.append([node.x, node.y, node.theta])
+            node = node.parent
+        path.append([node.x, node.y, node.theta])
+        return path
+    
     def generate_final_course(self, goal_ind):
         # f = open("nodePath.txt", "r+")
         path = [[self.end.x, self.end.y, self.end.theta]]
