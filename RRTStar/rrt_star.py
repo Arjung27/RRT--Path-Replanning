@@ -35,11 +35,11 @@ class RRTStar(RRT):
             self.cost = 0.0
 
     def __init__(self, start, goal, obstacle_list_circle, obstacle_list_square, rand_area,
-                 expand_dis=30.0,
+                 expand_dis=3.0,
                  path_resolution=1.0,
                  goal_sample_rate=20,
                  max_iter=500,
-                 connect_circle_dist=50.0,
+                 connect_circle_dist=10.0,
                  clearance=0,
                  detection_range=2.0):
         super().__init__(start, goal, obstacle_list_circle, obstacle_list_square,
@@ -257,8 +257,65 @@ class RRTStar(RRT):
                 return True
             else:
                 return False
-        
-        
+    
+    def find_nodes_for_new_parent(self, current_node, sampling_distance):
+
+        nearby_nodes = []
+        inds = self.node_list.index(current_node)
+        for i, node in enumerate(self.node_list):
+            if ((node.x - current_node.x)**2 - (node.y - current_node.y)**2)**0.5 < sampling_distance:
+                nearby_nodes.append(node)
+                self.rewire(node, inds)
+
+        return nearby_nodes
+
+
+    def make_cuurent_node_parent(self, current_node, all_nearby_nodes):
+
+        for node in all_nearby_nodes:
+            node.parent = current_node
+
+    def replan(self, remaining_path, new_obstacle_node, current_node):
+
+        index = self.get_nearest_node_index(remaining_path, new_obstacle_node)
+        intrmediate_goal = remaining_path[index + 1]
+        sampling_distance = ((current_node.x - intrmediate_goal.x)**2 + (current_node.y - intrmediate_goal.y)**2)**0.5
+
+        all_nearby_nodes = self.find_nodes_for_new_parent(current_node, sampling_distance)
+        make_current_node_parent(self, current_node, all_nearby_nodes)
+
+        self.start = current_node
+        self.goal_node = intrmediate_goal
+        all_nearby_nodes.append(current_node)
+        self.node_list = all_nearby_nodes
+        for i in range(self.max_iter):
+            print("Iter:", i, ", number of nodes:", len(self.node_list))
+            rnd = self.get_random_node()
+            nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
+            new_node = self.steer(self.node_list[nearest_ind], rnd, self.expand_dis)
+
+            if self.check_collision(new_node, self.obstacle_list_circle, self.obstacle_list_square, self.clearance):
+                near_inds = self.find_near_nodes(new_node)
+                new_node = self.choose_parent(new_node, near_inds)
+                if new_node:
+                    self.node_list.append(new_node)
+                    self.rewire(new_node, near_inds)
+
+            if animation and i % 5 == 0:
+                self.draw_graph(rnd)
+
+            if (not search_until_max_iter) and new_node:  # check reaching the goal
+                last_index = self.search_best_goal_node()
+                if last_index:
+                    return self.generate_final_course(last_index)
+
+        print("reached max iteration")
+
+        last_index = self.search_best_goal_node()
+        if last_index:
+            return self.generate_final_course(last_index)
+
+
     def replan_if_path_blocked(self, current_node, obstacle_node, path):
         time.sleep(1)
         new_obstacle_node = self.Node(obs_x, obs_y)
@@ -266,7 +323,7 @@ class RRTStar(RRT):
         if self.check_trajectory_collision(current_node, new_obstacle_node, obstacle_node):
             #TODO
             #Replan algorithm
-            path = self.replan()
+            path = self.replan(path, new_obstacle_node, current_node)
         
         return path
     
@@ -276,7 +333,7 @@ class RRTStar(RRT):
         prev_node = None
         while len(nodes_to_visit) != 0:
             obstacle_node = self.Node(obs_x, obs_y)
-            robot = nodes_to_visit.pop()
+            robot = nodes_to_visit.popleft()
             final_path.append(robot)
             current_node = self.Node(robot[0], robot[1])
             current_node.parent = prev_node
