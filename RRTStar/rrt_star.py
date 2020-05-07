@@ -181,7 +181,7 @@ class RRTStar(RRT):
 
     def generate_obstacle_trajectory(self):
 
-        x = np.linspace(-1, 1, num=50)
+        x = np.linspace(1, -1, num=50)
         # y = np.abs(np.sin(x**2/9.0)) + 6
         y = np.sqrt(1 - x**2)
 
@@ -314,8 +314,8 @@ class RRTStar(RRT):
 
         all_nearby_nodes, inds = self.find_nodes_for_new_parent(current_node, sampling_distance)
         self.node_list = all_nearby_nodes
-        self.node_list.append(current_node)
         self.make_current_node_parent(current_node, self.node_list)
+        self.node_list.append(current_node)
         for n1 in self.node_list:
             self.rewire(n1, [len(self.node_list) - 1])
             # print(n1.x, n1.y, n1.parent.x, n1.parent.y, sampling_distance, len(self.node_list))
