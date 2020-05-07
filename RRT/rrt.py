@@ -4,6 +4,7 @@ import random
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import numpy as np
+np.random.seed(25)
 
 show_animation = True
 
@@ -27,8 +28,8 @@ class RRT:
             self.theta = None
             self.path_theta = []
             
-        def __eq__(self, other):
-            return self.x == other.x and self.y == other.y
+        # def __eq__(self, other):
+        #     return self.x == other.x and self.y == other.y
 
     def __init__(self, start, goal, obstacle_list_circle, obstacle_list_square, rand_area,
                  expand_dis=3.0, path_resolution=0.5, goal_sample_rate=5, max_iter=500, clearance=0):
@@ -195,6 +196,7 @@ class RRT:
         return math.hypot(dx, dy)
 
     def get_random_node(self):
+        np.random.seed(25)
         if random.randint(0, 100) > self.goal_sample_rate:
             rnd = self.Node(random.uniform(self.min_rand, self.max_rand),
                             random.uniform(self.min_rand, self.max_rand))

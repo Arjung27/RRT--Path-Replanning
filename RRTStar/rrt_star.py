@@ -38,7 +38,7 @@ class RRTStar(RRT):
                  expand_dis=3.0,
                  path_resolution=1.0,
                  goal_sample_rate=20,
-                 max_iter=500,
+                 max_iter=300,
                  connect_circle_dist=10.0,
                  clearance=0,
                  detection_range=2.0):
@@ -181,8 +181,9 @@ class RRTStar(RRT):
 
     def generate_obstacle_trajectory(self):
 
-        x = np.linspace(0, 10, num=100)
-        y = np.abs(np.sin(x**2/9.0)) + 6
+        x = np.linspace(-1, 1, num=100)
+        # y = np.abs(np.sin(x**2/9.0)) + 6
+        y = np.sqrt(1 - x**2)
 
         indexes = []
         count = 0
@@ -216,6 +217,7 @@ class RRTStar(RRT):
         return True
 
     def get_obstacle_location(self):
+        time.sleep(2)
         path = self.generate_obstacle_trajectory()
         # print("OBSTACLE PATHHHH")
         # print(path)
@@ -275,7 +277,7 @@ class RRTStar(RRT):
 
         nearby_nodes = []
         for i, n in enumerate(self.node_list):
-            if n == current_node:
+            if n.x == current_node.x and n.y == current_node.y:
                 inds = i
         # inds = self.node_list.index(current_node)
         print("Found index", inds)
@@ -356,13 +358,13 @@ class RRTStar(RRT):
         return path
     
     def need_for_replan(self, path):
-        time.sleep(39)
+        # time.sleep(39)
         final_path = []
         nodes_to_visit = deque(path)
         prev_node = None
         while len(nodes_to_visit) != 0:
             obstacle_node = self.Node(obs_x, obs_y)
-            robot = nodes_to_visit.popleft()
+            robot = nodes_to_visit.pop()
             final_path.append(robot)
             current_node = self.Node(robot[0], robot[1])
             current_node.parent = prev_node
@@ -427,9 +429,9 @@ def main():
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     t1 = executor.submit(rrt_star.planning, show_animation)
     #     path = t1.result()
-    # path = rrt_star.planning(animation=show_animation)
+    path = rrt_star.planning(animation=show_animation)
     # path = [[6, 10, None], [4.935288207869231, 8.167564596777668, 1.03330664866742], [3.399344460620826, 5.590574723827343, 1.216212269993973], [3.0521441331220442, 4.6527837382741986, 2.095447056264107], [4.053965617034213, 2.9217858427318557, 0.6658839055357819], [2.4812235054113425, 1.6862769393531567, 0.5969134076015434], [0, 0, 0]]
-    path = [[6, 10, None], [8.295166061988946, 9.647090488213937, 1.7064226267848028], [8.56558783411669, 7.665456802297366, 1.3988459609471349], [8.052275003299025, 4.709698027004978, 1.6670188814098872], [8.340497421582613, 1.72357548471058, 0.8111946307190926], [6.963232050695838, 0.27335477800552366, 0.18204962000928065], [4.996282682866677, -0.08873662536724658, 0.010189555964332997], [1.9964384220953, -0.11930476428721955, -0.05968781681993424], [0, 0, 0]]
+    # path = [[6, 10, None], [8.295166061988946, 9.647090488213937, 1.7064226267848028], [8.56558783411669, 7.665456802297366, 1.3988459609471349], [8.052275003299025, 4.709698027004978, 1.6670188814098872], [8.340497421582613, 1.72357548471058, 0.8111946307190926], [6.963232050695838, 0.27335477800552366, 0.18204962000928065], [4.996282682866677, -0.08873662536724658, 0.010189555964332997], [1.9964384220953, -0.11930476428721955, -0.05968781681993424], [0, 0, 0]]
 
 
     f = open('nodePath.txt', 'r')
