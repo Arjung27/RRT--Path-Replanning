@@ -181,7 +181,7 @@ class RRTStar(RRT):
 
     def generate_obstacle_trajectory(self):
 
-        x = np.linspace(-1, 1, num=100)
+        x = np.linspace(-1, 1, num=50)
         # y = np.abs(np.sin(x**2/9.0)) + 6
         y = np.sqrt(1 - x**2)
 
@@ -217,7 +217,7 @@ class RRTStar(RRT):
         return True
 
     def get_obstacle_location(self):
-        time.sleep(2)
+        # time.sleep(2)
         path = self.generate_obstacle_trajectory()
         # print("OBSTACLE PATHHHH")
         # print(path)
@@ -254,12 +254,15 @@ class RRTStar(RRT):
         return newAngle
     
     def check_trajectory_collision(self, current_node, obstacle_node, old_obstacle_node):
-        threshold_angle = 140
+        threshold_angle = 181
         angle_direction = math.atan2((obstacle_node.y - current_node.y), (obstacle_node.x - current_node.x))
         print("Angle direction ", angle_direction)
         angle_obs = math.atan2((obstacle_node.y - old_obstacle_node.y), (obstacle_node.x - old_obstacle_node.x))
         print("Obstacle velocity angle ", angle_obs)
-        angle_robot = math.atan2((current_node.y - current_node.parent.y), (current_node.x - current_node.parent.x))
+        if current_node.parent is None:
+            angle_robot = math.atan2((current_node.y), (current_node.x))
+        else:
+            angle_robot = math.atan2((current_node.y - current_node.parent.y), (current_node.x - current_node.parent.x))
         print("Robot velocity angle ", angle_robot)
         if abs(self.normalize_angle(angle_direction - angle_robot)) < threshold_angle:
             angle_v_diff = abs(self.normalize_angle(angle_robot - angle_obs))
@@ -302,9 +305,12 @@ class RRTStar(RRT):
         return minind
 
     def replan(self, remaining_path, new_obstacle_node, current_node):
+        remaining_path = list(remaining_path)
         search_until_max_iter = True
         animation = True
         index = self.get_nearest_node_index_replan(remaining_path, new_obstacle_node)
+        print(index)
+        print(len(remaining_path))
         intrmediate_goal = remaining_path[index + 1]
         sampling_distance = ((current_node.x - intrmediate_goal[0])**2 + (current_node.y - intrmediate_goal[1])**2)**0.5
 
