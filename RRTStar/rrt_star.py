@@ -37,7 +37,7 @@ class RRTStar(RRT):
     def __init__(self, start, goal, obstacle_list_circle, obstacle_list_square, rand_area,
                  expand_dis=5.0,
                  path_resolution=1.0,
-                 goal_sample_rate=20,
+                 goal_sample_rate=5,
                  max_iter=1000,
                  connect_circle_dist=10.0,
                  clearance=0,
@@ -288,9 +288,8 @@ class RRTStar(RRT):
             if ((node.x - current_node.x)**2 + (node.y - current_node.y)**2)**0.5 < sampling_distance and \
                 ((node.x - current_node.x)**2 + (node.y - current_node.y)**2)**0.5 != 0:
                 nearby_nodes.append(node)
-                self.rewire(node, [inds])
 
-        return nearby_nodes
+        return nearby_nodes, inds
 
 
     def make_current_node_parent(self, current_node, all_nearby_nodes):
@@ -308,28 +307,28 @@ class RRTStar(RRT):
     def replan(self, remaining_path, new_obstacle_node, current_node):
         remaining_path = list(remaining_path)
         search_until_max_iter = True
-        animation = False
+        animation = True
         index = self.get_nearest_node_index_replan(remaining_path, new_obstacle_node)
-        print(index)
-        print(len(remaining_path))
         intrmediate_goal = remaining_path[index - 1]
         sampling_distance = ((current_node.x - intrmediate_goal[0])**2 + (current_node.y - intrmediate_goal[1])**2)**0.5
 
-        all_nearby_nodes = self.find_nodes_for_new_parent(current_node, sampling_distance)
-        self.make_current_node_parent(current_node, all_nearby_nodes)
+        all_nearby_nodes, inds = self.find_nodes_for_new_parent(current_node, sampling_distance)
+        self.node_list = all_nearby_nodes
+        self.node_list.append(current_node)
+        self.make_current_node_parent(current_node, self.node_list)
+        for n1 in self.node_list:
+            self.rewire(n1, [len(self.node_list) - 1])
+            # print(n1.x, n1.y, n1.parent.x, n1.parent.y, sampling_distance, len(self.node_list))
 
-        for n1 in all_nearby_nodes:
-            print(n1.x, n1.y, n1.parent.x, n1.parent.y, sampling_distance, len(all_nearby_nodes))
-
-        self.connect_circle_dist = 5.0
-        self.expand_dis = 1.0
+        self.connect_circle_dist = 10.0
+        self.expand_dis = 3.0
         self.start = current_node
         self.goal_node = self.Node(intrmediate_goal[0], intrmediate_goal[1])
-        all_nearby_nodes.append(current_node)
-        self.node_list = all_nearby_nodes
+        self.end.x = intrmediate_goal[0]
+        self.end.y = intrmediate_goal[1]
         self.min_rand = -sampling_distance
         self.max_rand = sampling_distance + 1
-        for i in range(1000):
+        for i in range(300):
             # print("Iter:", i, ", number of nodes: {}, {}, {}".format(len(self.node_list), (self.start.x, self.start.y), (self.goal_node.x, self.goal_node.y)))
             rnd = self.get_random_node()
             # print("Random Node: {}, {}, {}".format(rnd.x, rnd.y, sampling_distance))
@@ -349,12 +348,16 @@ class RRTStar(RRT):
             if (not search_until_max_iter) and new_node:  # check reaching the goal
                 last_index = self.search_best_goal_node()
                 if last_index:
+                    print("Path Found")
                     return self.generate_final_course(last_index)
+
 
         print("reached max iteration")
 
         last_index = self.search_best_goal_node()
         if last_index:
+            # print("Last Index: ", last_index)
+            print("Path Found")
             return self.generate_final_course(last_index)
 
 
@@ -370,6 +373,7 @@ class RRTStar(RRT):
             #Replan algorithm
             path = self.replan(path, new_obstacle_node, current_node)
         
+        # print(path)
         return path
     
     def need_for_replan(self, path):
@@ -400,7 +404,7 @@ class RRTStar(RRT):
 def main():
     print("Start " + __file__)
     clearance = 0.1
-    radius = 0.0
+    radius = 0.354/2
 
     # ====Search Path with RRT====
     # obstacle_list_circle = [
@@ -415,8 +419,8 @@ def main():
     # ]  # [x,y,size(radius)]
 
     obstacleList_circle = [
-        (2.1, 3.1, 1),
-        (7.1, 3.1, 1),
+        (3.1, 2.1, 1),
+        (7.1, 2.1, 1),
         (5.1, 5.1, 1),
         (7.1, 8.1, 1)
         # (7, 5, 2),
@@ -433,8 +437,8 @@ def main():
 
     # Set Initial parameters
     rrt_star = RRTStar(start=[0, 0],
-                       goal=[6, 10],
-                       rand_area=[-2, 15],
+                       goal=[7, 5],
+                       rand_area=[0, 10],
                        obstacle_list_circle=obstacleList_circle,
                        obstacle_list_square=obstacleList_square,
                        clearance=clearance+radius)
@@ -453,10 +457,10 @@ def main():
     else:
         f = open('nodePath.txt', 'r')
         lines = f.readlines()
-        x_int = 0
-        y_int = 0
+        # x_int = 0
+        # y_int = 0
         pts = []
-        pts.append([x_int, y_int])
+        # pts.append([x_int, y_int])
         for line in lines:
             points = line.rstrip().split(',')
             print(points)
