@@ -35,10 +35,10 @@ class RRTStar(RRT):
             self.cost = 0.0
 
     def __init__(self, start, goal, obstacle_list_circle, obstacle_list_square, rand_area,
-                 expand_dis=3.0,
+                 expand_dis=5.0,
                  path_resolution=1.0,
                  goal_sample_rate=20,
-                 max_iter=200,
+                 max_iter=1000,
                  connect_circle_dist=10.0,
                  clearance=0,
                  detection_range=2.0):
@@ -285,7 +285,8 @@ class RRTStar(RRT):
         # inds = self.node_list.index(current_node)
         print("Found index", inds)
         for i, node in enumerate(self.node_list):
-            if ((node.x - current_node.x)**2 + (node.y - current_node.y)**2)**0.5 < sampling_distance:
+            if ((node.x - current_node.x)**2 + (node.y - current_node.y)**2)**0.5 < sampling_distance and \
+                ((node.x - current_node.x)**2 + (node.y - current_node.y)**2)**0.5 != 0:
                 nearby_nodes.append(node)
                 self.rewire(node, [inds])
 
@@ -307,7 +308,7 @@ class RRTStar(RRT):
     def replan(self, remaining_path, new_obstacle_node, current_node):
         remaining_path = list(remaining_path)
         search_until_max_iter = True
-        animation = True
+        animation = False
         index = self.get_nearest_node_index_replan(remaining_path, new_obstacle_node)
         print(index)
         print(len(remaining_path))
@@ -317,13 +318,21 @@ class RRTStar(RRT):
         all_nearby_nodes = self.find_nodes_for_new_parent(current_node, sampling_distance)
         self.make_current_node_parent(current_node, all_nearby_nodes)
 
+        for n1 in all_nearby_nodes:
+            print(n1.x, n1.y, n1.parent.x, n1.parent.y, sampling_distance, len(all_nearby_nodes))
+
+        self.connect_circle_dist = 5.0
+        self.expand_dis = 1.0
         self.start = current_node
         self.goal_node = self.Node(intrmediate_goal[0], intrmediate_goal[1])
         all_nearby_nodes.append(current_node)
         self.node_list = all_nearby_nodes
-        for i in range(self.max_iter):
-            print("Iter:", i, ", number of nodes:", len(self.node_list))
+        self.min_rand = -sampling_distance
+        self.max_rand = sampling_distance + 1
+        for i in range(1000):
+            # print("Iter:", i, ", number of nodes: {}, {}, {}".format(len(self.node_list), (self.start.x, self.start.y), (self.goal_node.x, self.goal_node.y)))
             rnd = self.get_random_node()
+            # print("Random Node: {}, {}, {}".format(rnd.x, rnd.y, sampling_distance))
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd, self.expand_dis)
 
@@ -435,34 +444,34 @@ def main():
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     t1 = executor.submit(rrt_star.planning, show_animation)
     #     path = t1.result()
-    path = rrt_star.planning(animation=show_animation)
+    path = rrt_star.planning(animation=False)
     # path = [[6, 10, None], [4.935288207869231, 8.167564596777668, 1.03330664866742], [3.399344460620826, 5.590574723827343, 1.216212269993973], [3.0521441331220442, 4.6527837382741986, 2.095447056264107], [4.053965617034213, 2.9217858427318557, 0.6658839055357819], [2.4812235054113425, 1.6862769393531567, 0.5969134076015434], [0, 0, 0]]
     # path = [[6, 10, None], [8.295166061988946, 9.647090488213937, 1.7064226267848028], [8.56558783411669, 7.665456802297366, 1.3988459609471349], [8.052275003299025, 4.709698027004978, 1.6670188814098872], [8.340497421582613, 1.72357548471058, 0.8111946307190926], [6.963232050695838, 0.27335477800552366, 0.18204962000928065], [4.996282682866677, -0.08873662536724658, 0.010189555964332997], [1.9964384220953, -0.11930476428721955, -0.05968781681993424], [0, 0, 0]]
 
-
-    f = open('nodePath.txt', 'r')
-    lines = f.readlines()
-    x_int = 0
-    y_int = 0
-    pts = []
-    pts.append([x_int, y_int])
-    for line in lines:
-        points = line.rstrip().split(',')
-        print(points)
-        pts.append([float(points[0]), float(points[1])])
-    
-    t1 = threading.Thread(target=rrt_star.get_obstacle_location, name='t1')
-    t2 = threading.Thread(target=rrt_star.need_for_replan, args=(path,), name='t2')
-
-    t1.start()
-    t2.start()
-    
-    t1.join()
-    t2.join()
-    
     if path is None:
         print("Cannot find path")
     else:
+        f = open('nodePath.txt', 'r')
+        lines = f.readlines()
+        x_int = 0
+        y_int = 0
+        pts = []
+        pts.append([x_int, y_int])
+        for line in lines:
+            points = line.rstrip().split(',')
+            print(points)
+            pts.append([float(points[0]), float(points[1])])
+        
+        t1 = threading.Thread(target=rrt_star.get_obstacle_location, name='t1')
+        t2 = threading.Thread(target=rrt_star.need_for_replan, args=(path,), name='t2')
+
+        t1.start()
+        t2.start()
+        
+        t1.join()
+        t2.join()
+    
+
         # print("found path!!")
         # f = open('nodePath.txt', 'r')
         # lines = f.readlines()
