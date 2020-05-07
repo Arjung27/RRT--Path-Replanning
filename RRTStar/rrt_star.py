@@ -274,7 +274,11 @@ class RRTStar(RRT):
     def find_nodes_for_new_parent(self, current_node, sampling_distance):
 
         nearby_nodes = []
-        inds = self.node_list.index(current_node)
+        for i, n in enumerate(self.node_list):
+            if n == current_node:
+                inds = i
+        # inds = self.node_list.index(current_node)
+        print("Found index", inds)
         for i, node in enumerate(self.node_list):
             if ((node.x - current_node.x)**2 - (node.y - current_node.y)**2)**0.5 < sampling_distance:
                 nearby_nodes.append(node)
@@ -287,19 +291,26 @@ class RRTStar(RRT):
 
         for node in all_nearby_nodes:
             node.parent = current_node
+            
+    def get_nearest_node_index_replan(self, node_list, rnd_node):
+        dlist = [(node[0] - rnd_node.x) ** 2 + (node[1] - rnd_node.y)
+                 ** 2 for node in node_list]
+        minind = dlist.index(min(dlist))
+
+        return minind
 
     def replan(self, remaining_path, new_obstacle_node, current_node):
         search_until_max_iter = True
         animation = True
-        index = self.get_nearest_node_index(remaining_path, new_obstacle_node)
+        index = self.get_nearest_node_index_replan(remaining_path, new_obstacle_node)
         intrmediate_goal = remaining_path[index + 1]
-        sampling_distance = ((current_node.x - intrmediate_goal.x)**2 + (current_node.y - intrmediate_goal.y)**2)**0.5
+        sampling_distance = ((current_node.x - intrmediate_goal[0])**2 + (current_node.y - intrmediate_goal[1])**2)**0.5
 
         all_nearby_nodes = self.find_nodes_for_new_parent(current_node, sampling_distance)
         self.make_current_node_parent(self, current_node, all_nearby_nodes)
 
         self.start = current_node
-        self.goal_node = intrmediate_goal
+        self.goal_node = self.Node(intrmediate_goal[0], intrmediate_goal[1])
         all_nearby_nodes.append(current_node)
         self.node_list = all_nearby_nodes
         for i in range(self.max_iter):

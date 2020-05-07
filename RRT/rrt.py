@@ -26,6 +26,9 @@ class RRT:
             self.parent = None
             self.theta = None
             self.path_theta = []
+            
+        def __eq__(self, other):
+            return self.x == other.x and self.y == other.y
 
     def __init__(self, start, goal, obstacle_list_circle, obstacle_list_square, rand_area,
                  expand_dis=3.0, path_resolution=0.5, goal_sample_rate=5, max_iter=500, clearance=0):
