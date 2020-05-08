@@ -23,7 +23,7 @@ def get_going():
     f_list[0,2] = ini_ang
     ini_turn = np.reshape([f_list[0,0],f_list[0,1],ini_ang],(1,3))
     
-    pause = np.vstack(( ini, np.tile(ini_turn, (1,1)) ))
+    pause = np.vstack(( ini, np.tile(ini_turn, (30,1)) ))
 
     for i in range (1,f_len-2,1):
         diff = f_list[i+1,:] - f_list[i,:]
