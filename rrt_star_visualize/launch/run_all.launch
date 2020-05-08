@@ -9,6 +9,6 @@
   <!-- include our robots -->
   <include file="$(find rrt_star_visualize)/launch/robots.launch"/>
 
-  <!-- <node name="vel_pub" pkg ="rrt_star_visualize" type="vel_publish.py" output="screen"/> -->
+  <node name="vel_pub" pkg ="rrt_star_visualize" type="vel_publish.py" output="screen"/>
   <node name="obs_pub" pkg ="rrt_star_visualize" type="vel_obstacle.py" output="screen"/>
 </launch>
