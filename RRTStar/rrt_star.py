@@ -314,6 +314,17 @@ class RRTStar(RRT):
 
         return minind
 
+    def get_random_node_replan(self, sampling_distance):
+
+        x_coord = np.random.uniform(self.min_rand, self.max_rand)
+        y_coord = np.random.uniform(self.min_rand, self.max_rand)
+
+        while (x_coord**2 + y_coord**2)**0.5 >= sampling_distance:
+            x_coord = np.random.uniform(self.min_rand, self.max_rand)
+            y_coord = np.random.uniform(self.min_rand, self.max_rand)
+
+        return self.Node(x_coord, y_coord)
+
     def replan(self, remaining_path, new_obstacle_node, current_node):
         remaining_path = list(remaining_path)
         search_until_max_iter = True
@@ -341,7 +352,7 @@ class RRTStar(RRT):
         self.max_rand = sampling_distance + 1
         for i in range(300):
             # print("Iter:", i, ", number of nodes: {}, {}, {}".format(len(self.node_list), (self.start.x, self.start.y), (self.goal_node.x, self.goal_node.y)))
-            rnd = self.get_random_node()
+            rnd = self.get_random_node_replan(sampling_distance)
             # print("Random Node: {}, {}, {}".format(rnd.x, rnd.y, sampling_distance))
             nearest_ind = self.get_nearest_node_index(self.node_list, rnd)
             new_node = self.steer(self.node_list[nearest_ind], rnd, self.expand_dis)
@@ -543,7 +554,7 @@ def main():
         print(path)
         # Draw final path
 
-        f1 = open('obstaclePath.txt', 'r')
+        f1 = open('obstaclePathScam.txt', 'r')
         lines1 = f1.readlines()
         # x_int = 0
         # y_int = 0
