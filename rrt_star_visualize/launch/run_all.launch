@@ -1,0 +1,14 @@
+<launch>
+  <param name="/use_sim_time" value="true" />
+
+  <!-- start world -->
+  <node name="gazebo" pkg="gazebo_ros" type="gazebo" 
+   args="$(find rrt_star_visualize)/worlds/map.world" respawn="false" output="screen" />
+ 
+  
+  <!-- include our robots -->
+  <include file="$(find rrt_star_visualize)/launch/robots.launch"/>
+
+  <!-- <node name="vel_pub" pkg ="rrt_star_visualize" type="vel_publish.py" output="screen"/> -->
+  <node name="obs_pub" pkg ="rrt_star_visualize" type="vel_obstacle.py" output="screen"/>
+</launch>
