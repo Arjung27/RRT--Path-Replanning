@@ -597,8 +597,11 @@ def main():
             for cnt in range(count_robot, len(node_path_replan) - 2):
                 plt.plot([node_path_replan[count_robot][0], node_path_replan[count_robot + 1][0]],
                          [node_path_replan[count_robot][1], node_path_replan[count_robot + 1][1]], '-y', linewidth=2)
-                plt.plot([pts_obs[count_obstacle][0], pts_obs[count_obstacle + 1][0]],
-                         [pts_obs[count_obstacle][1], pts_obs[count_obstacle + 1][1]], '-r')
+                
+                if count_obstacle < len(pts_obs) - 1:
+                    plt.plot([pts_obs[count_obstacle][0], pts_obs[count_obstacle + 1][0]],
+                             [pts_obs[count_obstacle][1], pts_obs[count_obstacle + 1][1]], '-r')
+                plt.savefig('./plots/' + str(cnt) + '.png')
                 plt.grid(True)
                 plt.pause(0.1)
                 count_robot += 1
