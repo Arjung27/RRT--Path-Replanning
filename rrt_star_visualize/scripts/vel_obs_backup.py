@@ -10,19 +10,22 @@ def get_going():
     dirpath = os.path.dirname(os.path.realpath(__file__))
     
     f_list = None
-    with open(dirpath + '/robotPath.txt', "r") as file1:
+    with open(dirpath + '/obstaclePath.txt', "r") as file1:
         f_list = [float(i) for line in file1 for i in line.split(',') if i.strip()]
 
     f_list = np.reshape(f_list, (len(f_list)/3,3))
-
-    ang_offset = 5
-    f_list[:,2] -= np.pi*(float(ang_offset)/180.0)
-
-
+    
+    f_list[:,2] += np.pi -5*np.pi/180 ## adding offset for correct heading
     ini=[f_list[0,0],f_list[0,1],0.0]
     ini=np.reshape(ini,(1,3))
-    f_list = np.vstack((ini,f_list))
+    ini_rot=np.reshape([f_list[0,0],f_list[0,1],f_list[0,2]],(1,3))
+    
+    # pause = np.tile(ini_rot, (40,1))
+    pause = np.tile(ini_rot, (1,1))
 
+   
+    f_list = np.vstack((pause,f_list))
+    f_list = np.vstack((ini,f_list))
     
     th = f_list[:,2]
     pos = f_list[:,0:2]
@@ -58,11 +61,10 @@ def get_going():
     t_stamp = 1.0 #sec
     velocities = np.asarray(del_vals) * float(1/t_stamp) 
     linear = velocities[:,0]
-    linear *= 0.9
+    # linear *= 0.9
     angular = velocities[:,1]
     angular *= 0.9
-
-    cmd_vel = rospy.Publisher('/robot/mobile_base/commands/velocity', Twist, queue_size=1000)
+    cmd_vel = rospy.Publisher('/obstacle/mobile_base/commands/velocity', Twist, queue_size=1000)
 
     move_cmd_init = Twist()
     move_cmd_init.linear.x = 0
@@ -78,9 +80,9 @@ def get_going():
     while not rospy.is_shutdown():
 
         if cnt < len(linear):
-            print("cnt_r {}".format(cnt))
-            # print("linear_r {}".format(move_cmd.linear.x))
-            # print("angular_r {}".format(move_cmd.angular.z))
+            print("cnt_o {}".format(cnt))
+            print("linear_o {}".format(move_cmd.linear.x))
+            print("angular_o {}".format(move_cmd.angular.z))
             move_cmd.linear.x = linear[cnt]
             move_cmd.angular.z = angular[cnt]
             cnt += 1
@@ -97,12 +99,12 @@ def get_going():
                 
             cmd_vel.publish(move_cmd_init)
         else:
-            print("robot has reached its destination")
+            print("obstacle has reached its destination")
 
 if __name__ == '__main__':
 
-    rospy.init_node('vel_publish', anonymous=True)
+    rospy.init_node('vel_obstacle', anonymous=True)
     get_going()
-    print("robot has reached its destination")
-    
+   
+    print("obstacle has reached its destination")
 

@@ -10,19 +10,28 @@ def get_going():
     dirpath = os.path.dirname(os.path.realpath(__file__))
     
     f_list = None
-    with open(dirpath + '/robotPath.txt', "r") as file1:
+    with open(dirpath + '/obstaclePath.txt', "r") as file1:
         f_list = [float(i) for line in file1 for i in line.split(',') if i.strip()]
 
     f_list = np.reshape(f_list, (len(f_list)/3,3))
-
-    ang_offset = 5
-    f_list[:,2] -= np.pi*(float(ang_offset)/180.0)
-
+    f_len = len(f_list)
 
     ini=[f_list[0,0],f_list[0,1],0.0]
     ini=np.reshape(ini,(1,3))
-    f_list = np.vstack((ini,f_list))
 
+    ini_ang = np.arctan2((f_list[1,1]-f_list[0,1]),(f_list[1,0]-f_list[0,0]))
+    f_list[0,2] = ini_ang
+    ini_turn = np.reshape([f_list[0,0],f_list[0,1],ini_ang],(1,3))
+    
+    pause = np.vstack(( ini, np.tile(ini_turn, (1,1)) ))
+
+    for i in range (1,f_len-2,1):
+        diff = f_list[i+1,:] - f_list[i,:]
+        f_list[i,2] = np.arctan2(diff[1],diff[0])
+    f_list[f_len-1,2] = f_list[f_len-2,2]
+   
+    f_list = np.vstack((pause,f_list))
+    f_list = np.vstack((ini,f_list))
     
     th = f_list[:,2]
     pos = f_list[:,0:2]
@@ -51,18 +60,21 @@ def get_going():
             del_pos.append(0) #linear vel will be 0 
             del_theta.append(th[i+1]-k_prev)
 
+
+
     del_pos = np.reshape(del_pos,(len(del_pos),1))
     del_theta = np.reshape(del_theta,(len(del_theta),1))
     del_vals = np.hstack((del_pos,del_theta))
 
-    t_stamp = 1.0 #sec
+    # print(np.hstack((f_list[:,2].reshape(f_len,1),del_pos)))
+
+    t_stamp = 1.5 #sec
     velocities = np.asarray(del_vals) * float(1/t_stamp) 
     linear = velocities[:,0]
-    linear *= 0.9
+    # linear *= 0.9
     angular = velocities[:,1]
     angular *= 0.9
-
-    cmd_vel = rospy.Publisher('/robot/mobile_base/commands/velocity', Twist, queue_size=1000)
+    cmd_vel = rospy.Publisher('/obstacle/mobile_base/commands/velocity', Twist, queue_size=1000)
 
     move_cmd_init = Twist()
     move_cmd_init.linear.x = 0
@@ -78,13 +90,13 @@ def get_going():
     while not rospy.is_shutdown():
 
         if cnt < len(linear):
-            print("cnt_r {}".format(cnt))
-            # print("linear_r {}".format(move_cmd.linear.x))
-            # print("angular_r {}".format(move_cmd.angular.z))
+            print("cnt_o {}".format(cnt))
+            print("linear_o {}".format(move_cmd.linear.x))
+            print("angular_o {}".format(move_cmd.angular.z))
             move_cmd.linear.x = linear[cnt]
             move_cmd.angular.z = angular[cnt]
             cnt += 1
-
+            # time.sleep(1)
             t0 = rospy.Time.now().to_sec()
             tf = t0
 
@@ -97,12 +109,12 @@ def get_going():
                 
             cmd_vel.publish(move_cmd_init)
         else:
-            print("robot has reached its destination")
+            print("obstacle has reached its destination")
 
 if __name__ == '__main__':
 
-    rospy.init_node('vel_publish', anonymous=True)
+    rospy.init_node('vel_obstacle', anonymous=True)
     get_going()
-    print("robot has reached its destination")
-    
+   
+    print("obstacle has reached its destination")
 

@@ -1,0 +1,21 @@
+<launch>
+
+  <param name="robot_description"
+    command="$(find xacro)/xacro.py $(find turtlebot_description)/robots/kobuki_hexagons_asus_xtion_pro.urdf.xacro" />
+ 
+  <group ns="robot">
+    <param name="tf_prefix" value="robot_tf" />
+    <include file="$(find rrt_star_visualize)/launch/one_bot.launch" >
+      <arg name="init_pose" value="-x 4 -y 3 -Y 3.14" />
+      <arg name="robot_name"  value="Robot" />
+    </include>
+  </group>
+ 
+  <group ns="obstacle">
+    <param name="tf_prefix" value="obstacle_tf" />
+    <include file="$(find rrt_star_visualize)/launch/one_bot.launch" >
+      <arg name="init_pose" value="-x 3.128 -y -1.359105660445096 -Y 3.14" />
+      <arg name="robot_name"  value="Obstacle" />
+    </include>
+  </group>
+</launch>

@@ -1,0 +1,19 @@
+<!-- export ROBOT_INITIAL_POSE="-x -4 -y -3 -Y 0" -->
+<launch>
+  <arg name="robot_name"/>
+    <arg name="init_pose"/>
+    
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+        <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+
+  <node name="spawn_turtlebot_model" pkg="gazebo_ros" type="spawn_model"
+         args="$(arg init_pose) -unpause -urdf -param /robot_description -model $(arg robot_name)"/>
+<!--  
+  <node name="vel_pub" pkg ="rrt_star_visualize" type="vel_publish.py" output="screen"/>  -->
+
+</launch>
+  
+  
+
