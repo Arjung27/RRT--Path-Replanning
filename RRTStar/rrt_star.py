@@ -429,7 +429,7 @@ class RRTStar(RRT):
             prev_node = current_node
             time.sleep(1)
 
-        f = open("nodeReplannedPath.txt", "a+")
+        f = open("robotPath.txt", "a+")
         for step in final_path:
             f.write(str(step[0]) + ',' + str(step[1]) + ',' + str(step[2]) + '\n')
         f.close()
@@ -502,7 +502,7 @@ def main():
                        obstacle_list_square=obstacleList_square,
                        clearance=clearance+radius)
     open('nodePath.txt', 'w').close()
-    open('nodeReplannedPath.txt', 'w').close()
+    open('robotPath.txt', 'w').close()
     # open('obstaclePath.txt', 'w').close()
     # with concurrent.futures.ThreadPoolExecutor() as executor:
     #     t1 = executor.submit(rrt_star.planning, show_animation)
@@ -545,7 +545,7 @@ def main():
             points = line.rstrip().split(',')
             # print(points)
             pts_obs.append([float(points[0]), float(points[1])])
-        f2 = open('nodeReplannedPath.txt', 'r')
+        f2 = open('robotPath.txt', 'r')
         lines2 = f2.readlines()
         # x_int = 0
         # y_int = 0
