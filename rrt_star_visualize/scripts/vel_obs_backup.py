@@ -14,21 +14,15 @@ def get_going():
         f_list = [float(i) for line in file1 for i in line.split(',') if i.strip()]
 
     f_list = np.reshape(f_list, (len(f_list)/3,3))
-    f_len = len(f_list)
-
+    
+    f_list[:,2] += np.pi -5*np.pi/180 ## adding offset for correct heading
     ini=[f_list[0,0],f_list[0,1],0.0]
     ini=np.reshape(ini,(1,3))
-
-    ini_ang = np.arctan2((f_list[1,1]-f_list[0,1]),(f_list[1,0]-f_list[0,0]))
-    f_list[0,2] = ini_ang
-    ini_turn = np.reshape([f_list[0,0],f_list[0,1],ini_ang],(1,3))
+    ini_rot=np.reshape([f_list[0,0],f_list[0,1],f_list[0,2]],(1,3))
     
-    pause = np.vstack(( ini, np.tile(ini_turn, (1,1)) ))
+    # pause = np.tile(ini_rot, (40,1))
+    pause = np.tile(ini_rot, (1,1))
 
-    for i in range (1,f_len-2,1):
-        diff = f_list[i+1,:] - f_list[i,:]
-        f_list[i,2] = np.arctan2(diff[1],diff[0])
-    f_list[f_len-1,2] = f_list[f_len-2,2]
    
     f_list = np.vstack((pause,f_list))
     f_list = np.vstack((ini,f_list))
@@ -60,15 +54,11 @@ def get_going():
             del_pos.append(0) #linear vel will be 0 
             del_theta.append(th[i+1]-k_prev)
 
-
-
     del_pos = np.reshape(del_pos,(len(del_pos),1))
     del_theta = np.reshape(del_theta,(len(del_theta),1))
     del_vals = np.hstack((del_pos,del_theta))
 
-    # print(np.hstack((f_list[:,2].reshape(f_len,1),del_pos)))
-
-    t_stamp = 1.5 #sec
+    t_stamp = 1.0 #sec
     velocities = np.asarray(del_vals) * float(1/t_stamp) 
     linear = velocities[:,0]
     # linear *= 0.9
@@ -96,7 +86,7 @@ def get_going():
             move_cmd.linear.x = linear[cnt]
             move_cmd.angular.z = angular[cnt]
             cnt += 1
-            # time.sleep(1)
+
             t0 = rospy.Time.now().to_sec()
             tf = t0
 
