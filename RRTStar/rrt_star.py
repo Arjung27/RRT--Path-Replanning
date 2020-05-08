@@ -560,9 +560,12 @@ def main():
             rrt_star.draw_graph()
             plt.plot([x for (x, y, theta) in path], [y for (x, y, theta) in path], '-m')
             count_robot = 0
+            img_count = 0
             for obs_cnt in range(30):
                 plt.plot([node_path_replan[obs_cnt][0], node_path_replan[obs_cnt + 1][0]],
                          [node_path_replan[obs_cnt][1], node_path_replan[obs_cnt + 1][1]], '-y', linewidth=2)
+                plt.savefig('./plots/%04d.png' % img_count)
+                img_count += 1
                 plt.grid(True)
                 plt.pause(0.1)
                 count_robot += 1
@@ -575,7 +578,8 @@ def main():
                 if count_obstacle < len(pts_obs) - 1:
                     plt.plot([pts_obs[count_obstacle][0], pts_obs[count_obstacle + 1][0]],
                              [pts_obs[count_obstacle][1], pts_obs[count_obstacle + 1][1]], '-r')
-                plt.savefig('./plots/' + str(cnt) + '.png')
+                plt.savefig('./plots/%04d.png' % img_count)
+                img_count += 1
                 plt.grid(True)
                 plt.pause(0.1)
                 count_robot += 1
@@ -584,6 +588,8 @@ def main():
             for obs_cnt in range(count_obstacle, len(pts_obs) - 2):
                 plt.plot([pts_obs[obs_cnt][0], pts_obs[obs_cnt + 1][0]],
                          [pts_obs[obs_cnt][1], pts_obs[obs_cnt + 1][1]], '-r')
+                plt.savefig('./plots/%04d.png' % img_count)
+                img_count += 1
                 plt.grid(True)
                 plt.pause(0.1)
             plt.grid(True)
