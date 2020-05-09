@@ -450,7 +450,7 @@ def main():
 
     obstacleList_circle = [
         (3.1, 2.1, 1),
-        (7.1, 2.1, 1),
+        (3.1, 8.1, 1),
         (5.1, 5.1, 1),
         (7.1, 8.1, 1)
     ]  # [x, y, radius]
@@ -458,7 +458,7 @@ def main():
     # ======Rectangular Obstacles (bottom left and top right coord) ======#
     obstacleList_square = [
         (0.35, 4.35, 1.85, 5.85),
-        (2.35, 7.35, 3.85, 8.85),
+        (6.35, 1.35, 7.85, 2.85),
         (8.35, 4.35, 9.85, 5.85)
         ]
 
